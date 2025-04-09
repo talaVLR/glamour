@@ -1,0 +1,2 @@
+# glamour
+my thesis proj.
