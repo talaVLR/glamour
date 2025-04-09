@@ -1,0 +1,189 @@
+{% extends "artist_base.html" %}  <!-- Use artist_base.html instead of admin_base.html -->
+{% block content %}
+
+<h2 class="text-center mb-4">My Suggestions</h2>
+<!-- Add Shade Button -->
+
+<button type="button" class="btn btn-primary mb-4" data-toggle="modal" data-target="#addShadeModal">
+    Add Shade
+</button>
+<!-- Add Spectrum CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.css">
+
+<!-- Display Message if No Suggestions -->
+{% if no_suggestions %}
+    <div class="alert alert-info" role="alert">
+        You have no pending suggestions.
+    </div>
+{% else %}
+    <!-- Table for Pending Suggestions -->
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Shade Name</th>
+                <th>Shade Type</th>
+                <th>Skin Tone</th>
+                <th>Undertone</th>
+                <th>Hex Code</th>
+                <th>Description</th>
+                <th>Image</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        
+        <tbody>
+            {% for suggestion in suggestions %}
+            <tr>
+                <td>{{ suggestion.shade_name }}</td>
+                <td>{{ suggestion.shade_type }}</td>
+                <td>{{ suggestion.skin_tone_name }}</td>
+                <td>
+                    {{ suggestion.undertone_name }}<br>
+                    <small>{{ suggestion.undertone_description }}</small>
+                </td>
+                <td>
+                    <div style="width: 50px; height: 50px; background-color: {{ suggestion.hex_code }};"></div>
+                </td>
+                <td>{{ suggestion.description }}</td>
+                <td>
+                    {% if suggestion.image %}
+                        <img src="data:image/jpeg;base64,{{ suggestion.image }}" width="50" height="50">
+                    {% else %}
+                        No Image
+                    {% endif %}
+                </td>
+                <td>
+                    <!-- Edit Button (Triggers Modal) -->
+                    <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#editModal{{ suggestion.suggestion_id }}">
+                        Edit
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+{% endif %}
+
+<!-- Add Shade Modal -->
+<div class="modal fade" id="addShadeModal" tabindex="-1" role="dialog" aria-labelledby="addShadeModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addShadeModalLabel">Add Shade</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Add Shade Form -->
+                <form action="{{ url_for('add_artist_suggestion') }}" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="shade_name">Shade Name</label>
+                        <input type="text" class="form-control" id="shade_name" name="shade_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="shade_type_id">Shade Type</label>
+                        <select class="form-control" id="shade_type_id" name="shade_type_id" required>
+                            {% for shade_type in shade_types %}
+                                <option value="{{ shade_type.shade_type_id }}">{{ shade_type.shade_type_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="hex_code">Hex Code</label>
+                        <input type="text" class="form-control" id="hex_code" name="hex_code" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="color_picker">Color Picker</label>
+                        <input type="text" class="form-control" id="color_picker">
+                    </div>
+                    <div class="form-group">
+                        <label for="skin_tone_id">Skin Tone</label>
+                        <select class="form-control" id="skin_tone_id" name="skin_tone_id" required>
+                            {% for skin_tone in skin_tones %}
+                                <option value="{{ skin_tone.skin_tone_id }}">{{ skin_tone.skin_tone_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="undertone_id">Undertone</label>
+                        <select class="form-control" id="undertone_id" name="undertone_id" required>
+                            {% for undertone in undertones %}
+                                <option value="{{ undertone.undertone_id }}">{{ undertone.undertone_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="recommended_colors">Recommended Colors</label>
+                        <div id="recommended_colors" class="d-flex">
+                            <!-- Recommended colors will be dynamically inserted here -->
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea class="form-control" id="description" name="description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="image">Image</label>
+                        <input type="file" class="form-control" id="image" name="image">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Shade</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Full jQuery (required for Spectrum) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Bootstrap JS and dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<!-- Add Spectrum JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize Spectrum Color Picker
+        $("#color_picker").spectrum({
+            color: "#ffffff", // Default color
+            preferredFormat: "hex",
+            showInput: true,
+            showPalette: true,
+            palette: [
+                ["#ff0000", "#00ff00", "#0000ff"], // Custom palette
+                ["#ffffff", "#000000", "#ffcc00"]
+            ],
+            change: function(color) {
+                // Update the hex code input field when a color is selected
+                $("#hex_code").val(color.toHexString());
+            }
+        });
+
+        // Update the color picker when the hex code is manually entered
+        $("#hex_code").on("input", function() {
+            $("#color_picker").spectrum("set", $(this).val());
+        });
+
+        // Fetch recommended colors when skin tone or undertone is selected
+        $("#skin_tone_id, #undertone_id").on("change", function() {
+            const skinToneId = $("#skin_tone_id").val();
+            const undertoneId = $("#undertone_id").val();
+
+            if (skinToneId && undertoneId) {
+                fetch(`/get_recommended_colors?skin_tone_id=${skinToneId}&undertone_id=${undertoneId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const recommendedColorsDiv = $("#recommended_colors");
+                        recommendedColorsDiv.empty(); // Clear previous colors
+
+                        // Display the recommended colors
+                        data.forEach(shade => {
+                            recommendedColorsDiv.append(`
+                                <div style="width: 50px; height: 50px; background-color: ${shade.hex_code}; margin-right: 10px;" title="${shade.shade_name}"></div>
+                            `);
+                        });
+                    })
+                    .catch(error => console.error("Error fetching recommended colors:", error));
+            }
+        });
+    });
+</script>
+{% endblock %}

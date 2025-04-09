@@ -1,0 +1,440 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<div class="admin-profile-container">
+    <!-- Profile Header Section -->
+    <div class="profile-header">
+        <div class="profile-image-container">
+            {% if admin_profile.profile_pic %}
+            <img src="data:image/jpeg;base64,{{ admin_profile.profile_pic }}" alt="Profile Picture" class="profile-image">
+            {% else %}
+            <div class="profile-image-placeholder">
+                <i class="fas fa-user-crown"></i>
+            </div>
+            {% endif %}
+            <span class="admin-badge">ADMIN</span>
+        </div>
+
+        <div class="profile-info">
+            <h1 class="profile-name">{{ admin_profile.name }}</h1>
+            
+            <!-- Bio Section - Added Here -->
+            <div class="profile-bio">
+                {% if admin_profile.bio %}
+                <p class="bio-content">{{ admin_profile.bio }}</p>
+                {% else %}
+                <p class="bio-placeholder">
+                    <i class="fas fa-quote-left"></i> No bio added yet. Click edit to add your professional introduction.
+                </p>
+                {% endif %}
+                <button class="edit-bio-btn">
+                    <i class="fas fa-pencil-alt"></i> Edit Bio
+                </button>
+            </div>
+            
+            <div class="profile-meta">
+                <div class="meta-item">
+                    <i class="fas fa-envelope"></i>
+                    <span>{{ admin_profile.email }}</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-id-card"></i>
+                    <span>Admin ID: {{ admin_profile.admin_id }}</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-calendar-plus"></i>
+                    <span>Joined {{ admin_profile.join_date }}</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Last active: {{ admin_profile.last_login }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ admin_stats.total_actions|default('0') }}</div>
+            <div class="stat-label">Total Actions</div>
+            <i class="stat-icon fas fa-history"></i>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ admin_stats.recent_activity|default('0') }}</div>
+            <div class="stat-label">Today's Activity</div>
+            <i class="stat-icon fas fa-bolt"></i>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ admin_stats.managed_users|default('0') }}</div>
+            <div class="stat-label">Managed Users</div>
+            <i class="stat-icon fas fa-users"></i>
+        </div>
+    </div>
+
+    <!-- Activity Log Section -->
+    <div class="activity-section">
+        <h2 class="section-title">
+            <i class="fas fa-scroll"></i> Recent Activity Log
+        </h2>
+        
+        {% if admin_profile.activity_log %}
+        <div class="activity-timeline">
+            {% for log in admin_profile.activity_log %}
+            <div class="activity-item">
+                <div class="activity-icon {{ log.action_type }}">
+                    {% if log.action_type == 'login' %}
+                    <i class="fas fa-sign-in-alt"></i>
+                    {% elif log.action_type == 'user_edit' %}
+                    <i class="fas fa-user-edit"></i>
+                    {% elif log.action_type == 'delete' %}
+                    <i class="fas fa-trash-alt"></i>
+                    {% else %}
+                    <i class="fas fa-tasks"></i>
+                    {% endif %}
+                </div>
+                <div class="activity-content">
+                    <div class="activity-description">
+                        {{ log.description }}
+                        {% if log.affected_table and log.affected_record_id %}
+                        <span class="activity-target">
+                            ({{ log.affected_table|title }} #{{ log.affected_record_id }})
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="activity-meta">
+                        <span class="activity-time">
+                            {{ log.timestamp.strftime('%b %d, %Y at %I:%M %p') }}
+                        </span>
+                        <span class="activity-ip">
+                            <i class="fas fa-network-wired"></i> {{ log.ip_address|default('Unknown IP') }}
+                       
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-cloud"></i>
+            <p>No activity recorded yet</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary: #d4a5b3; /* Soft lavender for coquette touch */
+        --secondary: #f8f1ff; /* Light pearl */
+        --accent: #d4a5b3; /* Muted periwinkle */
+        --dark: #4a4458; /* Deep plum */
+        --text: #5a5475; /* Muted purple-gray */
+        --highlight: #e8c8d0; /* Soft lilac */
+    }
+
+    .admin-profile-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+    }
+
+    .profile-header {
+        display: flex;
+        gap: 2.5rem;
+        align-items: center;
+        background: white;
+        padding: 2.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(122, 111, 155, 0.08);
+        margin-bottom: 2rem;
+    }
+
+    .profile-image-container {
+        position: relative;
+    }
+
+    .profile-image, .profile-image-placeholder {
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 6px solid var(--highlight);
+        box-shadow: 0 8px 16px rgba(122, 111, 155, 0.12);
+    }
+
+    .profile-image-placeholder {
+        background: linear-gradient(135deg, var(--secondary), var(--accent));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 3.5rem;
+    }
+
+    .admin-badge {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: var(--primary);
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(74, 68, 88, 0.2);
+    }
+
+    .profile-info {
+        flex: 1;
+    }
+
+    .profile-name {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.2rem;
+        color: var(--dark);
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+    }
+
+    .profile-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-top: 1.2rem;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.95rem;
+        color: var(--text);
+    }
+
+    .meta-item i {
+        color: var(--primary);
+        width: 20px;
+        text-align: center;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 1.8rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(122, 111, 155, 0.08);
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: var(--text);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-icon {
+        position: absolute;
+        right: 1.5rem;
+        top: 1.5rem;
+        font-size: 1.8rem;
+        color: rgba(122, 111, 155, 0.1);
+    }
+
+    .activity-section {
+        background: white;
+        padding: 2.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(122, 111, 155, 0.08);
+    }
+
+    .section-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.8rem;
+        color: var(--dark);
+        margin-bottom: 1.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .activity-timeline {
+        border-left: 2px solid var(--highlight);
+        margin-left: 20px;
+        padding-left: 35px;
+    }
+
+    .activity-item {
+        position: relative;
+        padding: 1.5rem 0;
+    }
+
+    .activity-item:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: -35px;
+        width: calc(100% + 35px);
+        height: 1px;
+        background: rgba(122, 111, 155, 0.1);
+    }
+
+    .activity-icon {
+        position: absolute;
+        left: -46px;
+        top: 1.5rem;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.9rem;
+        background: var(--primary);
+        border: 3px solid white;
+        box-shadow: 0 3px 10px rgba(122, 111, 155, 0.2);
+    }
+
+    .activity-icon.login { background: #8a7dff; }
+    .activity-icon.user_edit { background: #ff7dba; }
+    .activity-icon.delete { background: #ff7d7d; }
+
+    .activity-content {
+        padding-left: 1rem;
+    }
+
+    .activity-description {
+        font-weight: 500;
+        color: var(--dark);
+        line-height: 1.5;
+    }
+
+    .activity-target {
+        color: var(--primary);
+        font-weight: 400;
+    }
+
+    .activity-meta {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 0.6rem;
+        font-size: 0.85rem;
+        color: var(--text-light);
+    }
+
+    .activity-time {
+        color: var(--text);
+        opacity: 0.8;
+    }
+
+    .activity-ip {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-light);
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--highlight);
+    }
+
+    @media (max-width: 768px) {
+        .profile-header {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .profile-image-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-meta {
+            justify-content: center;
+        }
+
+        .activity-icon {
+            left: -38px;
+        }
+    }
+
+    .profile-bio {
+        margin: 1.2rem 0;
+        padding: 1.5rem;
+        background: rgba(248, 241, 255, 0.5);
+        border-left: 3px solid var(--accent);
+        border-radius: 0 8px 8px 0;
+        position: relative;
+    }
+
+    .bio-content {
+        font-style: italic;
+        color: var(--text);
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .bio-placeholder {
+        color: var(--text-light);
+        font-style: italic;
+        margin: 0;
+    }
+
+    .bio-placeholder i {
+        color: var(--accent);
+        margin-right: 0.5rem;
+    }
+
+    .edit-bio-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: transparent;
+        border: none;
+        color: var(--primary);
+        cursor: pointer;
+        font-size: 0.8rem;
+        padding: 0.3rem 0.6rem;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+
+    .edit-bio-btn:hover {
+        background: rgba(122, 111, 155, 0.1);
+        color: var(--dark);
+    }
+
+    .edit-bio-btn i {
+        margin-right: 0.3rem;
+    }
+</style>
+{% endblock %}

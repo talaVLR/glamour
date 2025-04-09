@@ -1,0 +1,153 @@
+{% extends "artist_base.html" %}
+{% block content %}
+
+<!-- Dashboard Header -->
+<div class="dashboard-header text-center mb-5">
+    <h2 class="display-4">Artist Dashboard</h2>
+    <p class="lead">Welcome back, {{ session.get('user_name', 'Artist') }}!</p>
+</div>
+
+<!-- Statistics Section -->
+<div class="statistics-section mb-5">
+    <div class="row">
+        <!-- Most Common Skin Tone -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Most Common Skin Tone</h5>
+                    <p class="card-text">
+                        {% if most_skin_tone %}
+                            {{ most_skin_tone.skin_tone_name }} ({{ most_skin_tone.count }} recommendations)
+                        {% else %}
+                            No data available.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Most Common Face Shape -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Most Common Face Shape</h5>
+                    <p class="card-text">
+                        {% if most_face_shape %}
+                            {{ most_face_shape.face_shape_name }} ({{ most_face_shape.count }} recommendations)
+                        {% else %}
+                            No data available.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Most Common Makeup Look -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Most Common Makeup Look</h5>
+                    <p class="card-text">
+                        {% if most_makeup_look %}
+                            {{ most_makeup_look.makeup_look_name }} ({{ most_makeup_look.count }} recommendations)
+                        {% else %}
+                            No data available.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Suggestions Table -->
+<div class="suggestions-section">
+    <h3 class="mb-4">Your Suggestions</h3>
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Shade Name</th>
+                    <th>Skin Tone</th>
+                    <th>Undertone</th>
+                    <th>Makeup Look</th>
+                    <th>Shade Type</th>
+                    <th>Image</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for suggestion in suggestions %}
+                <tr style="cursor: pointer;">
+                    <td>
+                        <a href="{{ url_for('artist_suggestion', suggestion_id=suggestion.suggestion_id) }}" class="text-decoration-none text-dark">
+                            {{ suggestion.shade_name }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('artist_suggestion', suggestion_id=suggestion.suggestion_id) }}" class="text-decoration-none text-dark">
+                            {{ suggestion.skin_tone_name }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('artist_suggestion', suggestion_id=suggestion.suggestion_id) }}" class="text-decoration-none text-dark">
+                            {{ suggestion.undertone_name }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('artist_suggestion', suggestion_id=suggestion.suggestion_id) }}" class="text-decoration-none text-dark">
+                            {{ suggestion.makeup_look_name }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('artist_suggestion', suggestion_id=suggestion.suggestion_id) }}" class="text-decoration-none text-dark">
+                            {{ suggestion.shade_type_name }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('artist_suggestion', suggestion_id=suggestion.suggestion_id) }}" class="text-decoration-none text-dark">
+                            {% if suggestion.image %}
+                                <img src="data:image/jpeg;base64,{{ suggestion.image | b64encode }}" width="50" height="50" class="rounded">
+                            {% else %}
+                                <span class="text-muted">No Image</span>
+                            {% endif %}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('artist_suggestion', suggestion_id=suggestion.suggestion_id) }}" class="text-decoration-none text-dark">
+                            {% if suggestion.status == 'Pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% elif suggestion.status == 'Approved' %}
+                                <span class="badge bg-success">Approved</span>
+                            {% else %}
+                                <span class="badge bg-danger">Rejected</span>
+                            {% endif %}
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Custom CSS for Pink Theme -->
+<style>
+    .btn-pink {
+        background-color: #e83e8c;
+        border-color: #e83e8c;
+        color: white;
+    }
+    .btn-pink:hover {
+        background-color: #d63384;
+        border-color: #d63384;
+    }
+    .bg-pink {
+        background-color: #e83e8c !important;
+    }
+</style>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+{% endblock %}

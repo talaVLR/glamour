@@ -1,0 +1,344 @@
+{% extends "admin_base.html" %}
+{% block content %}
+
+<!-- Add Spectrum CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.css">
+<!-- Custom CSS for Coquette Design -->
+<style>
+    .btn-coquette {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: var(--dark-color);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 10px;
+        cursor: button;
+        transition: all 0.4s;
+        font-size: 15px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        font-family: 'Cormorant Garamond', serif;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        position: relative;
+        overflow: hidden;
+    }
+    .btn-coquette::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%);
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+    .btn-coquette:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+    }
+    .btn-coquette:hover::after {
+        opacity: 1;
+    }
+    .color-box {
+        width: 50px;
+        height: 50px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .modal-content {
+        border-radius: 18px;
+        border: var(--delicate-border);
+        box-shadow: var(--shadow);
+    }
+    .modal-header {
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        color: white;
+        border-top-left-radius: 18px;
+        border-top-right-radius: 18px;
+    }
+    .modal-title {
+        font-family: 'Playfair Display', serif;
+    }
+    .form-control {
+        border-radius: 10px;
+        border: var(--delicate-border);
+    }
+    .form-control:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 0.2rem rgba(232, 180, 188, 0.25);
+    }
+    .alert-info {
+        background-color: rgba(232, 180, 188, 0.1);
+        color: var(--dark-color);
+        border-radius: 10px;
+        border: var(--delicate-border);
+    }
+    .btn-sm {
+        border-radius: 10px;
+        padding: 5px 10px;
+        font-size: 14px;
+    }
+    .approve-btn {
+        background: linear-gradient(135deg, #e8f4ea, #d4e8d8);
+        color: #3a5a40;
+    }
+    .reject-btn {
+        background: linear-gradient(135deg, #f9e3e5, #f5d5d8);
+        color: #5a3a3a;
+    }
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .data-table th, .data-table td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+        color: #000; /* Dark text color */
+    }
+    .data-table th {
+        background-color: #f2f2f2;
+    }
+    .button-container {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 20px;
+    }
+</style>
+
+<h2 class="dashboard-title"><i class="fas fa-palette"></i> Suggestions</h2>
+
+<!-- Add Shade and Application Tips Buttons -->
+<div class="button-container">
+    <button type="button" class="btn-coquette" data-toggle="modal" data-target="#addShadeModal">
+        Add Shade
+    </button>
+    <button type="button" class="btn-coquette" data-toggle="modal" data-target="#addTipModal">
+        Add Application Tip
+    </button>
+</div>
+
+<!-- Pending Suggestions Section -->
+<h3 class="mt-4">Pending Suggestions</h3>
+{% if no_suggestions %}
+    <div class="alert alert-info" role="alert">
+        No pending suggestions.
+    </div>
+{% else %}
+    <!-- Table for Pending Suggestions -->
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Artist Name</th>
+                <th>Shade Name</th>
+                <th>Skin Tone</th>
+                <th>Undertone</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for suggestion in suggestions %}
+            <tr>
+                <td>{{ suggestion.artist_name }}</td>
+                <td>{{ suggestion.shade_name }}</td>
+                <td>{{ suggestion.skin_tone_name }}</td>
+                <td>
+                    {{ suggestion.undertone_name }}<br>
+                    <small>{{ suggestion.undertone_description }}</small>
+                </td>
+                <td>
+                    <!-- View Button (Triggers Modal) -->
+                    <button class="btn-coquette btn-sm" data-toggle="modal" data-target="#viewModal{{ suggestion.suggestion_id }}">
+                        View
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+<!-- Approved Shades Section -->
+<h3 class="mt-4">Approved Shades</h3>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Shade Name</th>
+            <th>Skin Tone</th>
+            <th>Undertone</th>
+            <th>Hex Codes</th>
+            <th>Image</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for shade in approved_shades %}
+        <tr>
+            <td>{{ shade.shade_name }}</td>
+            <td>{{ shade.skin_tone_name }}</td>
+            <td>{{ shade.undertone_name }}</td>
+            <td>
+                {% for hex in shade.hex_codes %}
+                    <div class="color-box" style="background-color: {{ hex }}; margin-bottom: 5px;"></div>
+                {% endfor %}
+            </td>
+            <td>
+                {% if shade.image %}
+                    <img src="data:image/jpeg;base64,{{ shade.image }}" width="50" height="50" class="rounded">
+                {% else %}
+                    No Image
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Modals for Viewing Pending Suggestions -->
+{% for suggestion in suggestions %}
+<div class="modal fade" id="viewModal{{ suggestion.suggestion_id }}" tabindex="-1" role="dialog" aria-labelledby="viewModalLabel{{ suggestion.suggestion_id }}" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewModalLabel{{ suggestion.suggestion_id }}">View Suggestion</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <h5>{{ suggestion.shade_name }}</h5>
+                <p>{{ suggestion.description }}</p>
+                <div class="mb-3">
+                    {% for hex in suggestion.hex_codes %}
+                        <div class="color-box" style="background-color: {{ hex }}; margin-bottom: 5px;"></div>
+                    {% endfor %}
+                </div>
+                {% if suggestion.image %}
+                    <img src="data极image/jpeg;base64,{{ suggestion.image }}" class="img-fluid rounded">
+                {% else %}
+                    <p>No Image</p>
+                {% endif %}
+                <div class="mt-3">
+                    <form action="{{ url_for('approve_suggestion', suggestion_id=suggestion.suggestion_id) }}" method="POST" style="display: inline;">
+                        <button class="btn-coquette approve-btn btn-sm">Approve</button>
+                    </form>
+                    <form action="{{ url_for('reject_suggestion', suggestion_id=suggestion.suggestion_id) }}" method="POST" style="display: inline;">
+                        <button class="btn-coquette reject-btn btn-sm">Reject</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Add Shade Modal -->
+<div class="modal fade" id="addShadeModal" tabindex="-1" role="dialog" aria-labelledby="addShadeModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addShadeModalLabel">Add Shade</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_shade') }}" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="shade_name">Shade Name</label>
+                        <input type="text" class="form-control" id="shade_name" name="shade_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="skin_tone_id">Skin Tone</label>
+                        <select class="form-control" id="skin_tone_id" name="skin_tone_id" required>
+                            {% for skin_tone in skin_tones %}
+                                <option value="{{ skin_tone.skin_tone_id }}">{{ skin_tone.skin_tone_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="undertone_id">Undertone</label>
+                        <select class="form-control" id="undertone_id" name="undertone_id" required>
+                            {% for undertone in undertones %}
+                                <option value="{{ undertone.undertone_id }}">{{ undertone.undertone_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="hex_codes">Hex Codes</label>
+                        <input type="text" class="form-control" name="hex_code" placeholder="Hex Code 1" required>
+                        <input type="text" class="form-control mt-2" name="hex_code_2" placeholder="Hex Code 2">
+                        <input type="text" class="form-control mt-2" name="hex_code_3" placeholder="Hex Code 3">
+                        <input type="text" class="form-control mt-2" name="hex_code_4" placeholder="Hex Code 4">
+                        <input type="text" class="form-control mt-2" name="hex_code_5" placeholder="Hex Code 5">
+                        <input type="text" class="form-control mt-2" name="hex_code_6" placeholder="Hex Code 6">
+                        <input type="text" class="form-control mt-2" name="hex_code_7" placeholder="Hex Code 7">
+                        <input type="text" class="form-control mt-2" name="hex_code_8" placeholder="Hex Code 8">
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea class="form-control" id="description" name="description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="image">Image</label>
+                        <input type="file" class="form-control" id="image" name="image">
+                    </div>
+                    <button type="submit" class="btn-coquette">Add Shade</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Application Tip Modal -->
+<div class="modal fade" id="addTipModal" tabindex="-1" role="dialog" aria-labelledby="addTipModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addTipModalLabel">Add Application Tip</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_tip') }}" method="POST">
+                    <div class="form-group">
+                        <label for="face_shape_id">Face Shape</label>
+                        <select class="form-control" id="face_shape_id" name="face_shape_id" required>
+                            {% for face_shape in face_shapes %}
+                                <option value="{{ face_shape.face_shape_id }}">{{ face_shape.face_shape_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tip">Tip</label>
+                        <textarea class="form-control" id="tip" name="tip" required></textarea>
+                    </div>
+                    <button type="submit" class="btn-coquette">Add Tip</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Full jQuery (required for Spectrum) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Bootstrap JS and dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<!-- Add Spectrum JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize Spectrum Color Picker for Hex Codes
+        $("input[name^='hex_code']").spectrum({
+            preferredFormat: "hex",
+            showInput: true,
+            showPalette: true,
+            palette: [
+                ["#ff0000", "#00ff00", "#0000ff"], // Custom palette
+                ["#ffffff", "#000000", "#ffcc00"]
+            ]
+        });
+    });
+</script>
+{% endblock %}

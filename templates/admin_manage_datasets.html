@@ -1,0 +1,685 @@
+{% extends "admin_base.html" %}
+{% block content %}
+<div class="container-fluid py-4 coquette-theme">
+    <!-- Recommendation Logs Section -->
+    <div class="dashboard-header text-center mb-5">
+        <h1 class="dashboard-title"><i class="fas fa-heart me-2"></i>Recommendation Logs</h1>
+        <p class="text-muted">User beauty recommendations history</p>
+    </div>
+    
+    <!-- Filter Section -->
+    <div class="card mb-4 border-0 shadow-sm" style="background-color: #fff9fa;">
+        <div class="card-body p-4">
+            <h5 class="card-title mb-4 text-pink"><i class="fas fa-filter me-2"></i>Filter Logs</h5>
+            <div class="row g-3">
+                <!-- Skin Tone Filter -->
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Skin Tone</label>
+                    <select class="form-select coquette-select" id="skinToneFilter">
+                        <option value="">All Skin Tones</option>
+                        {% for tone in skin_tones %}
+                        <option value="{{ tone }}">{{ tone }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Face Shape Filter -->
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Face Shape</label>
+                    <select class="form-select coquette-select" id="faceShapeFilter">
+                        <option value="">All Face Shapes</option>
+                        {% for shape in face_shapes %}
+                        <option value="{{ shape }}">{{ shape }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Makeup Type Filter -->
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Makeup Type</label>
+                    <select class="form-select coquette-select" id="makeupTypeFilter">
+                        <option value="">All Types</option>
+                        {% for type in makeup_types %}
+                        <option value="{{ type }}">{{ type }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Makeup Look Filter -->
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Makeup Look</label>
+                    <select class="form-select coquette-select" id="makeupLookFilter">
+                        <option value="">All Looks</option>
+                        {% for look in makeup_looks %}
+                        <option value="{{ look }}">{{ look }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Shade Filter -->
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Shade</label>
+                    <select class="form-select coquette-select" id="shadeFilter">
+                        <option value="">All Shades</option>
+                        {% for shade in shades %}
+                        <option value="{{ shade }}">{{ shade }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Date Range Filter -->
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Date Range</label>
+                    <div class="input-group">
+                        <input type="date" class="form-control coquette-input" id="startDate">
+                        <span class="input-group-text bg-pink text-white">to</span>
+                        <input type="date" class="form-control coquette-input" id="endDate">
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="col-md-3 d-flex align-items-end">
+                    <button id="applyFilters" class="btn btn-pink w-100">
+                        <i class="fas fa-filter me-2"></i> Apply
+                    </button>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button id="resetFilters" class="btn btn-outline-pink w-100">
+                        <i class="fas fa-undo me-2"></i> Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card h-100" style="background-color: #fff0f5;">
+                <div class="stat-icon"><i class="fas fa-scroll"></i></div>
+                <div class="stat-title">Total Logs</div>
+                <div class="stat-value">{{ total_recommendations }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card h-100" style="background-color: #fff0f5;">
+                <div class="stat-icon"><i class="fas fa-palette"></i></div>
+                <div class="stat-title">Popular Shade</div>
+                <div class="stat-value">{{ most_common_shade }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card h-100" style="background-color: #fff0f5;">
+                <div class="stat-icon"><i class="fas fa-blush"></i></div>
+                <div class="stat-title">Common Skin Tone</div>
+                <div class="stat-value">{{ most_common_skin_tone }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card h-100" style="background-color: #fff0f5;">
+                <div class="stat-icon"><i class="fas fa-user-circle"></i></div>
+                <div class="stat-title">Top Face Shape</div>
+                <div class="stat-value">{{ most_common_face_shape }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendation Logs Table -->
+    <div class="card shadow-sm border-0 mb-5" style="background-color: #fff9fa;">
+        <div class="card-header d-flex justify-content-between align-items-center border-0" style="background-color: #fff0f5;">
+            <h5 class="mb-0 text-pink"><i class="fas fa-history me-2"></i>Recommendation History</h5>
+            <div>
+                <button id="exportCSV" class="btn btn-sm btn-outline-pink me-2">
+                    <i class="fas fa-file-export me-2"></i> Export
+                </button>
+                <button id="refreshData" class="btn btn-sm btn-pink">
+                    <i class="fas fa-sync-alt me-2"></i> Refresh
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="recommendationTable">
+                    <thead style="background-color: #fff0f5;">
+                        <tr class="text-pink">
+                            <th><i class="fas fa-hashtag me-2"></i>ID</th>
+                            <th><i class="fas fa-user me-2"></i>User</th>
+                            <th><i class="fas fa-clock me-2"></i>Time</th>
+                            <th><i class="fas fa-hand-holding-heart me-2"></i>Skin</th>
+                            <th><i class="fas fa-face-smile me-2"></i>Face</th>
+                            <th><i class="fas fa-paint-brush me-2"></i>Type</th>
+                            <th><i class="fas fa-eye me-2"></i>Look</th>
+                            <th><i class="fas fa-star me-2"></i>Shade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if recommendations %}
+                        {% for log in recommendations %}
+                        <tr>
+                            <td>#{{ log.recommendation_id }}</td>
+                            <td>{{ log.user_id }}</td>
+                            <td>{{ log.timestamp.strftime('%m/%d %H:%M') if log.timestamp else 'N/A' }}</td>
+                            <td><span class="badge rounded-pill bg-skin">{{ log.skin_tone or 'N/A' }}</span></td>
+                            <td><span class="badge rounded-pill bg-face">{{ log.face_shape or 'N/A' }}</span></td>
+                            <td><span class="badge rounded-pill bg-type-{{ log.makeup_type|lower|replace(' ', '-') if log.makeup_type else 'none' }}">{{ log.makeup_type or 'N/A' }}</span></td>
+                            <td>{{ log.makeup_look or 'N/A' }}</td>
+                            <td><span class="badge rounded-pill bg-shade">{{ log.recommended_shade or 'N/A' }}</span></td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">No recommendations found.</td>
+                        </tr>
+                    {% endif %}
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Logs Section -->
+    <div class="dashboard-header text-center mb-5">
+        <h1 class="dashboard-title"><i class="fas fa-clipboard-list me-2"></i>Activity Logs</h1>
+        <p class="text-muted">User actions and system events</p>
+    </div>
+
+    <!-- Activity Logs Filter Section -->
+    <div class="card mb-4 border-0 shadow-sm" style="background-color: #fff9fa;">
+        <div class="card-body p-4">
+            <h5 class="card-title mb-4 text-pink"><i class="fas fa-filter me-2"></i>Filter Activities</h5>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Action Type</label>
+                    <select class="form-select coquette-select" id="actionTypeFilter">
+                        <option value="">All Actions</option>
+                        <option value="login">Logins</option>
+                        <option value="recommendation">Recommendations</option>
+                        <option value="profile_update">Profile Updates</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">User</label>
+                    <select class="form-select coquette-select" id="userFilter">
+                        <option value="">All Users</option>
+                        {% for user in active_users_list %}
+                        <option value="{{ user.user_id }}">{{ user.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Date Range</label>
+                    <div class="input-group">
+                        <input type="date" class="form-control coquette-input" id="activityStartDate">
+                        <span class="input-group-text bg-pink text-white">to</span>
+                        <input type="date" class="form-control coquette-input" id="activityEndDate">
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button id="applyActivityFilters" class="btn btn-pink w-100">
+                        <i class="fas fa-filter me-2"></i> Apply
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Logs Table -->
+    <div class="card shadow-sm border-0" style="background-color: #fff9fa;">
+        <div class="card-header d-flex justify-content-between align-items-center border-0" style="background-color: #fff0f5;">
+            <h5 class="mb-0 text-pink"><i class="fas fa-clipboard-list me-2"></i>Activity History</h5>
+            <div>
+                <button id="exportActivityCSV" class="btn btn-sm btn-outline-pink me-2">
+                    <i class="fas fa-file-export me-2"></i> Export
+                </button>
+                <button id="refreshActivityData" class="btn btn-sm btn-pink">
+                    <i class="fas fa-sync-alt me-2"></i> Refresh
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="activityTable">
+                    <thead style="background-color: #fff0f5;">
+                        <tr class="text-pink">
+                            <th><i class="fas fa-hashtag me-2"></i>ID</th>
+                            <th><i class="fas fa-user me-2"></i>User</th>
+                            <th><i class="fas fa-clock me-2"></i>Time</th>
+                            <th><i class="fas fa-bolt me-2"></i>Action</th>
+                            <th><i class="fas fa-info-circle me-2"></i>Details</th>
+                            <th><i class="fas fa-globe me-2"></i>IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activity in activities %}
+                        <tr class="activity-{{ activity.action_type }}">
+                            <td>#{{ activity.log_id }}</td>
+                            <td>{{ activity.user_name }}</td>
+                            <td>{{ activity.timestamp.strftime('%m/%d %H:%M') if activity.timestamp else 'N/A' }}</td>
+                            <td><span class="badge rounded-pill bg-activity-{{ activity.action_type }}">{{ activity.action_type|title }}</span></td>
+                            <td>{{ activity.description }}</td>
+                            <td>{{ activity.ip_address }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    /* Coquette Theme */
+    .coquette-theme {
+        background-color: #fff9fa;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .dashboard-title {
+        color: #d35d6e;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .text-pink {
+        color: #d35d6e !important;
+    }
+    
+    .bg-pink {
+        background-color: #d35d6e !important;
+    }
+    
+    .btn-pink {
+        background-color: #d35d6e;
+        color: white;
+        border: none;
+        transition: all 0.3s;
+    }
+    
+    .btn-pink:hover {
+        background-color: #b84c5c;
+        transform: translateY(-2px);
+    }
+    
+    .btn-outline-pink {
+        color: #d35d6e;
+        border-color: #d35d6e;
+        transition: all 0.3s;
+    }
+    
+    .btn-outline-pink:hover {
+        background-color: #fff0f5;
+        transform: translateY(-2px);
+    }
+    
+    .coquette-select {
+        border-radius: 20px;
+        border-color: #f8c3cd;
+        padding: 8px 15px;
+        background-color: white;
+    }
+    
+    .coquette-input {
+        border-radius: 20px;
+        border-color: #f8c3cd;
+        padding: 8px 15px;
+    }
+    
+    /* Stat Cards */
+    .stat-card {
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(211, 93, 110, 0.1);
+        border: 1px solid #ffe6eb;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(211, 93, 110, 0.15);
+    }
+    
+    .stat-icon {
+        font-size: 24px;
+        color: #d35d6e;
+        margin-bottom: 10px;
+    }
+    
+    .stat-title {
+        font-size: 14px;
+        color: #b8a9aa;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+        font-weight: 600;
+        color: #d35d6e;
+    }
+    
+    /* Badges */
+    .badge.bg-skin {
+        background-color: #fce4ec;
+        color: #d35d6e;
+    }
+    
+    .badge.bg-face {
+        background-color: #f3e5f5;
+        color: #9c27b0;
+    }
+    
+    .badge.bg-shade {
+        background-color: #fff3e0;
+        color: #ef6c00;
+    }
+    
+    .badge.bg-type-casual {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+    }
+    
+    .badge.bg-type-light {
+        background-color: #fff8e1;
+        color: #ff8f00;
+    }
+    
+    .badge.bg-type-heavy {
+        background-color: #fce4ec;
+        color: #ad1457;
+    }
+    
+    .badge.bg-type-none {
+        background-color: #f5f5f5;
+        color: #616161;
+    }
+    
+    /* Table Styling */
+    #logsTable {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    #logsTable thead th {
+        border: none;
+        font-weight: 500;
+        padding: 15px;
+    }
+    
+    #logsTable tbody td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #ffe6eb;
+        vertical-align: middle;
+    }
+    
+    #logsTable tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    #logsTable tbody tr:hover {
+        background-color: #fff0f5 !important;
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #fff0f5;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: #f8c3cd;
+        border-radius: 10px;
+    }
+    /* Activity Badges */
+    .badge.bg-activity-login {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+    }
+    
+    .badge.bg-activity-recommendation {
+        background-color: #e3f2fd;
+        color: #1565c0;
+    }
+    
+    .badge.bg-activity-profile_update {
+        background-color: #fff3e0;
+        color: #e65100;
+    }
+    
+    /* Activity Table Row Colors */
+    tr.activity-login {
+        border-left: 4px solid #4CAF50;
+    }
+    
+    tr.activity-recommendation {
+        border-left: 4px solid #2196F3;
+    }
+    
+    tr.activity-profile_update {
+        border-left: 4px solid #FFC107;
+    }
+</style>
+
+<script>
+$(document).ready(function() {
+    // Initialize recommendation table
+    var recTable = $('#recommendationTable').DataTable({
+        order: [[2, 'desc']],
+        pageLength: 25,
+        dom: '<"top"<"d-flex justify-content-between align-items-center"<"mb-3"l><"mb-3"f>>>rt<"bottom"<"d-flex justify-content-between align-items-center"ip>>',
+        language: {
+            search: "<i class='fas fa-search me-2'></i>",
+            searchPlaceholder: "Search recommendations...",
+            lengthMenu: "<i class='fas fa-list-ol me-2'></i>Show _MENU_ entries",
+            paginate: {
+                previous: "<i class='fas fa-chevron-left'></i>",
+                next: "<i class='fas fa-chevron-right'></i>"
+            }
+        }
+    });
+
+    // Initialize activity table
+    var activityTable = $('#activityTable').DataTable({
+        order: [[2, 'desc']],
+        pageLength: 25,
+        dom: '<"top"<"d-flex justify-content-between align-items-center"<"mb-3"l><"mb-3"f>>>rt<"bottom"<"d-flex justify-content-between align-items-center"ip>>',
+        language: {
+            search: "<i class='fas fa-search me-2'></i>",
+            searchPlaceholder: "Search activities...",
+            lengthMenu: "<i class='fas fa-list-ol me-2'></i>Show _MENU_ entries",
+            paginate: {
+                previous: "<i class='fas fa-chevron-left'></i>",
+                next: "<i class='fas fa-chevron-right'></i>"
+            }
+        }
+    });
+
+    // Apply filters via AJAX
+    $('#applyFilters').click(function() {
+        const filters = {
+            skin_tone: $('#skinToneFilter').val(),
+            face_shape: $('#faceShapeFilter').val(),
+            makeup_type: $('#makeupTypeFilter').val(),
+            makeup_look: $('#makeupLookFilter').val(),
+            shade: $('#shadeFilter').val(),
+            start_date: $('#startDate').val(),
+            end_date: $('#endDate').val()
+        };
+        
+        // Date validation
+        if (filters.start_date && filters.end_date && new Date(filters.start_date) > new Date(filters.end_date)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Date Error',
+                text: 'End date must be after start date',
+                background: '#fff9fa',
+                confirmButtonColor: '#d35d6e'
+            });
+            return;
+        }
+        
+        $.ajax({
+            url: '/admin/filter_recommendations',
+            method: 'POST',
+            data: filters,
+            beforeSend: function() {
+                Swal.fire({
+                    title: 'Filtering...',
+                    html: 'Applying your filters',
+                    timerProgressBar: true,
+                    didOpen: () => {
+                        Swal.showLoading()
+                    },
+                    background: '#fff9fa'
+                });
+            },
+            success: function(response) {
+                Swal.close();
+                recTable.clear();
+                $.each(response, function(index, log) {
+                    var timestamp = log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A';
+                    
+                    recTable.row.add([
+                        '#' + log.recommendation_id,
+                        log.user_id,
+                        timestamp,
+                        '<span class="badge rounded-pill bg-skin">' + (log.skin_tone || 'N/A') + '</span>',
+                        '<span class="badge rounded-pill bg-face">' + (log.face_shape || 'N/A') + '</span>',
+                        '<span class="badge rounded-pill bg-type-' + (log.makeup_type ? log.makeup_type.toLowerCase().replace(' ', '-') : 'none') + '">' + (log.makeup_type || 'N/A') + '</span>',
+                        log.makeup_look || 'N/A',
+                        '<span class="badge rounded-pill bg-shade">' + (log.recommended_shade || 'N/A') + '</span>'
+                    ]);
+                });
+                recTable.draw();
+            },
+            error: function(xhr, status, error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Filter Error',
+                    text: 'Error applying filters. Please try again.',
+                    background: '#fff9fa',
+                    confirmButtonColor: '#d35d6e'
+                });
+            }
+        });
+    });
+
+    // Reset filters
+    $('#resetFilters').click(function() {
+        $('.form-select').val('');
+        $('#startDate, #endDate').val('');
+        recTable.search('').columns().search('').draw();
+    });
+
+    // Export CSV
+    $('#exportCSV').click(function() {
+        const filters = {
+            skin_tone: $('#skinToneFilter').val(),
+            face_shape: $('#faceShapeFilter').val(),
+            makeup_type: $('#makeupTypeFilter').val(),
+            makeup_look: $('#makeupLookFilter').val(),
+            shade: $('#shadeFilter').val(),
+            start_date: $('#startDate').val(),
+            end_date: $('#endDate').val()
+        };
+        
+        const queryParams = new URLSearchParams();
+        for (const key in filters) {
+            if (filters[key]) {
+                queryParams.append(key, filters[key]);
+            }
+        }
+        
+        window.location.href = '/admin/export_recommendations?' + queryParams.toString();
+    });
+
+    // Refresh data
+    $('#refreshData').click(function() {
+        Swal.fire({
+            title: 'Refreshing',
+            html: 'Loading latest data',
+            timerProgressBar: true,
+            didOpen: () => {
+                Swal.showLoading()
+            },
+            background: '#fff9fa'
+        });
+        setTimeout(() => {
+            location.reload();
+        }, 500);
+    });
+
+    // Apply filters for activity table
+    $('#applyActivityFilters').click(function() {
+        const filters = {
+            action_type: $('#actionTypeFilter').val(),
+            user_id: $('#userFilter').val(),
+            start_date: $('#activityStartDate').val(),
+            end_date: $('#activityEndDate').val()
+        };
+        
+        $.ajax({
+            url: '/admin/filter_activities',
+            method: 'POST',
+            data: filters,
+            beforeSend: function() {
+                Swal.fire({
+                    title: 'Filtering Activities...',
+                    html: 'Applying your filters',
+                    timerProgressBar: true,
+                    didOpen: () => {
+                        Swal.showLoading()
+                    },
+                    background: '#fff9fa'
+                });
+            },
+            success: function(response) {
+                Swal.close();
+                activityTable.clear();
+                $.each(response, function(index, activity) {
+                    var timestamp = activity.timestamp ? new Date(activity.timestamp).toLocaleString() : 'N/A';
+                    
+                    activityTable.row.add([
+                        '#' + activity.log_id,
+                        activity.user_name,
+                        timestamp,
+                        '<span class="badge rounded-pill bg-activity-' + activity.action_type + '">' + 
+                            activity.action_type.charAt(0).toUpperCase() + activity.action_type.slice(1) + 
+                        '</span>',
+                        activity.description,
+                        activity.ip_address
+                    ]);
+                });
+                activityTable.draw();
+            },
+            error: function(xhr, status, error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Filter Error',
+                    text: 'Error applying activity filters. Please try again.',
+                    background: '#fff9fa',
+                    confirmButtonColor: '#d35d6e'
+                });
+            }
+        });
+    });
+
+    // Reset activity filters
+    $('#resetActivityFilters').click(function() {
+        $('#actionTypeFilter, #userFilter').val('');
+        $('#activityStartDate, #activityEndDate').val('');
+        activityTable.search('').columns().search('').draw();
+    });
+
+    // Refresh activity data
+    $('#refreshActivityData').click(function() {
+        location.reload();
+    });
+});
+</script>
+{% endblock %}

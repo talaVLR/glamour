@@ -1,0 +1,886 @@
+{% extends "admin_base.html" %}
+{% block content %}
+<div class="container-fluid py-4 coquette-theme">
+    <div class="dashboard-header text-center mb-5">
+        <h1 class="dashboard-title"><i class="fas fa-users me-2"></i>User Management</h1>
+        <p class="text-muted"></p>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card mb-4 border-0 shadow-sm" style="background-color: #fff9fa;">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <!-- Search Bar -->
+                <div class="col-md-5">
+                    <div class="search-container">
+                        <i class="fas fa-search"></i>
+                        <input type="search" id="searchInput" placeholder="Search users by name, email, or ID..." class="coquette-input">
+                    </div>
+                </div>
+                
+                <!-- Filter Buttons -->
+                <div class="col-md-5">
+                    <div class="filter-container">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="admin">Admins</button>
+                        <button class="filter-btn" data-filter="artist">Artists</button>
+                        <button class="filter-btn" data-filter="enthusiast">Enthusiasts</button>
+                        <button class="filter-btn" data-filter="applicant">Applicants</button>
+                        <button class="filter-btn" data-filter="rejected">Rejected</button>
+                        <button class="filter-btn" data-filter="archived">Archived</button>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="col-md-2 text-end">
+                    <div class="add-admin-container">
+                        <button class="btn-add-admin" data-bs-toggle="modal" data-bs-target="#addAdminModal">
+                            <i class="fas fa-plus"></i>
+                            <span class="add-admin-tooltip">Add Admin</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+<!-- Users Table -->
+<div class="card shadow-sm border-0" style="background-color: #fff9fa;">
+    <div class="card-header d-flex justify-content-between align-items-center border-0" style="background-color: #fff0f5;">
+        <h5 class="mb-0 text-pink"><i class="fas fa-list-ul me-2"></i>User Directory</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive" style="overflow-x: auto;">
+            <table class="table table-hover mb-0" id="usersTable" style="table-layout: fixed; width: 100%;">
+                <thead style="background-color: #fff0f5;">
+                    <tr class="text-pink">
+                        <th style="min-width: 50px;"><i class="fas fa-hashtag me-1"></i>ID</th>
+                        <th style="min-width: 150px;"><i class="fas fa-user me-1"></i>User</th>
+                        <th style="min-width: 200px;"><i class="fas fa-envelope me-1"></i>Email</th>
+                        <th style="min-width: 80px;"><i class="fas fa-cake-candles me-1"></i>Date of Birth</th>
+                        <th style="min-width: 120px;"><i class="fas fa-tag me-1"></i>Type</th>
+                        <th style="min-width: 150px;"><i class="fas fa-heart-circle-check me-1"></i>Status</th>
+                        <th style="min-width: 120px;"><i class="fas fa-gear me-1"></i>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in all_users %}
+                    <tr 
+                        {% if user.user_type_id == 1 %} data-type="admin" 
+                        {% elif user.user_type_id == 2 and user.approval_status == 'pending' %} data-type="applicant"
+                        {% elif user.user_type_id == 2 and user.approval_status == 'rejected' %} data-type="rejected"
+                        {% elif user.user_type_id == 2 %} data-type="artist"
+                        {% elif user.user_type_id == 3 %} data-type="enthusiast"
+                        {% endif %}
+                        {% if user.is_archived %} data-type="archived" class="archived" {% endif %}
+                        data-created="{{ user.created_at }}"
+                        style="border-bottom: 1px solid #ffe6eb; min-height: 60px;"
+                    >
+                        <td style="vertical-align: middle;">#{{ user.user_id }}</td>
+                        <td style="vertical-align: middle;" class="user-cell">
+                            {% if user.user_image %}
+                            <img src="{{ url_for('user_image', user_id=user.user_id) }}" alt="{{ user.name }}" class="user-avatar">
+                            {% else %}
+                            <div class="avatar-placeholder">{{ user.name|first|upper }}</div>
+                            {% endif %}
+                            <span>{{ user.name }}</span>
+                        </td>
+                        <td style="vertical-align: middle; word-wrap: break-word;">{{ user.email }}</td>
+                        <td style="vertical-align: middle;">{{ user.dob }}</td>
+                        <td style="vertical-align: middle;">{{ user.user_type_name }}</td>
+                        <td style="vertical-align: middle;">
+                            {% if user.user_type_name == 'Artist' %}
+                             <span class="status-badge 
+                                    {% if user.approval_status == 'pending' %} pending
+                                    {% elif user.approval_status == 'approved' %} approved
+                                    {% else %} rejected {% endif %}">
+{{ user.approval_status|capitalize }}
+                                    
+                                    {% if user.approval_status == 'rejected' %}
+                                        <div class="rejection-details">
+                                            <div><small>Reason: {{ user.verdict or 'No reason provided' }}</small></div>
+                                            <div><small>Date: {{ user.verdict_time.strftime('%Y-%m-%d') if user.verdict_time else 'N/A' }}</small></div>
+                                        </div>
+                                    {% endif %}
+                                    {% if user.approval_status == 'approved' %}
+                                        <div class="approve-details">
+                                            <div><small>Reason: {{ user.verdict or 'No reason provided' }}</small></div>
+                                            <div><small>Date: {{ user.verdict_time.strftime('%Y-%m-%d') if user.verdict_time else 'N/A' }}</small></div>
+                                        </div>
+                                    {% endif %}
+                                </span>
+                            {% endif %}
+                            
+                            {% if user.user_type_name == 'Makeup Enthusiast' and not user.is_archived %}
+                                <span class="status-badge active">Active</span>
+                            {% endif %}
+                            
+                            {% if user.is_archived %}
+                                <span class="status-badge archived">Archived</span>
+                            {% endif %}
+                        </td>
+                        <td class="action-buttons" style="vertical-align: middle;">
+                            <button class="btn-icon view-btn" data-bs-toggle="modal" data-bs-target="#viewUser Modal{{ user.user_id }}" title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            
+                            {% if user.user_type_name == 'Artist' %}
+                                <button class="btn-icon edit-btn" data-bs-toggle="modal" data-bs-target="#editArtistStatusModal{{ user.user_id }}" title="Edit">
+                                    <i class="fas fa-pen-to-square"></i>
+                                </button>
+                            {% endif %}
+                            
+                            {% if user.is_archived %}
+                                <form action="{{ url_for('unarchive_user', user_id=user.user_id) }}" method="POST">
+                                    <button type="submit" class="btn-icon restore-btn" title="Restore" onclick="return confirm('Restore {{ user.name }}?');">
+                                        <i class="fas fa-trash-restore"></i>
+                                    </button>
+                                </form>
+                            {% else %}
+                                <form action="{{ url_for('archive_user', user_id=user.user_id) }}" method="POST">
+                                    <button type="submit" class="btn-icon archive-btn" title="Archive" onclick="return confirm('Archive {{ user.name }}?');">
+                                        <i class="fas fa-box-archive"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<!-- View User Modal -->
+{% for user in all_users %}
+<div class="modal fade" id="viewUserModal{{ user.user_id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(to right, #d35d6e, #e88d9a);">
+                <h5 class="modal-title text-white"><i class="fas fa-user-circle me-2"></i>User Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="user-profile-header text-center mb-4">
+                    {% if user.user_image %}
+                    <img src="{{ url_for('user_image', user_id=user.user_id) }}" alt="{{ user.name }}" class="profile-image">
+                    {% else %}
+                    <div class="profile-placeholder">{{ user.name|first|upper }}</div>
+                    {% endif %}
+                    <h4 class="mt-3">{{ user.name }}</h4>
+                    <p class="text-muted">{{ user.user_type_name }}</p>
+                </div>
+                
+                <div class="user-details-grid">
+                    <div class="detail-item">
+                        <label><i class="fas fa-envelope me-2 text-pink"></i>Email</label>
+                        <p>{{ user.email }}</p>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-cake-candles me-2 text-pink"></i>Date of Birth</label>
+                        <p>{{ user.dob }}</p>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-calendar-plus me-2 text-pink"></i>Joined</label>
+                        <p>{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') if user.created_at else 'N/A' }}</p>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-heart-circle-check me-2 text-pink"></i>Status</label>
+                        <p>
+                            {% if user.user_type_name == 'Artist' %}
+                                <span class="status-badge 
+                                    {% if user.approval_status == 'pending' %} pending
+                                    {% elif user.approval_status == 'approved' %} approved
+                                    {% else %} rejected {% endif %}">
+                                    {{ user.approval_status|capitalize }}
+                                </span>
+                            {% else %}
+                                <span class="status-badge {% if user.is_archived %}archived{% else %}active{% endif %}">
+                                    {% if user.is_archived %}Archived{% else %}Active{% endif %}
+                                </span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% if user.user_type_name == 'Artist' and user.approval_status == 'rejected' %}
+                    <div class="detail-item">
+                        <label><i class="fas fa-calendar-xmark me-2 text-pink"></i>Rejected On</label>
+                        <p>{{ user.verdict_time.strftime('%Y-%m-%d %H:%M:%S') if user.verdict_time else 'N/A' }}</p>
+                    </div>
+                    {% endif %}
+                    <div class="detail-item">
+                        <label><i class="fas fa-hand-sparkles me-2 text-pink"></i>Skin Tone</label>
+                        <p>{{ user.skin_tone_name or 'Not specified' }}</p>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-face-smile me-2 text-pink"></i>Face Shape</label>
+                        <p>{{ user.face_shape_name or 'Not specified' }}</p>
+                    </div>
+                    <div class="detail-item full-width">
+                        <label><i class="fas fa-comment-dots me-2 text-pink"></i>Feedback</label>
+                        <p>{{ user.feedback or 'No feedback provided' }}</p>
+                    </div>
+                    <div class="detail-item full-width">
+                        <label><i class="fas fa-star me-2 text-pink"></i>Recommendation</label>
+                        <p>{{ user.recommendation_name or 'No recommendation' }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-pink" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Edit Artist Status Modal -->
+{% for user in all_users %}
+{% if user.user_type_name == 'Artist' %}
+<div class="modal fade" id="editArtistStatusModal{{ user.user_id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(to right, #d35d6e, #e88d9a);">
+                <h5 class="modal-title text-white"><i class="fas fa-pen-to-square me-2"></i>Update Artist Status</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('edit_artist_status', artist_id=user.artist_id) }}" method="POST">
+                    <div class="form-group mb-3">
+                        <label class="form-label"><i class="fas fa-info-circle me-2 text-pink"></i>Current Status</label>
+                        <input type="text" class="form-control coquette-input" value="{{ user.approval_status|capitalize }}" readonly>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="statusSelect{{ user.user_id }}" class="form-label"><i class="fas fa-list-check me-2 text-pink"></i>New Status</label>
+                        <select class="form-control coquette-select" name="status" id="statusSelect{{ user.user_id }}" required onchange="toggleVerdictField(this)">
+                            <option value="pending" {% if user.approval_status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="approved" {% if user.approval_status == 'approved' %}selected{% endif %}>Approved</option>
+                            <option value="rejected" {% if user.approval_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Verdict Field -->
+                    <div class="form-group mb-3 verdict-field" style="display: none;">
+                        <label for="verdict{{ user.user_id }}" class="form-label"><i class="fas fa-comment me-2 text-pink"></i>Verdict</label>
+                        <textarea class="form-control coquette-input" name="verdict" id="verdict{{ user.user_id }}" rows="3" 
+                                  placeholder="Please provide a reason for changing the status..."></textarea>
+                        <small class="text-muted">This message will be visible to the artist.</small>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-pink" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-pink">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- Add Admin Modal -->
+<div class="modal fade" id="addAdminModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(to right, #d35d6e, #e88d9a);">
+                <h5 class="modal-title text-white"><i class="fas fa-plus-circle me-2"></i>Add New Admin</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_admin') }}" method="POST">
+                    <div class="form-group mb-3">
+                        <label class="form-label"><i class="fas fa-user me-2 text-pink"></i>Full Name</label>
+                        <input type="text" class="form-control coquette-input" name="name" required>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label class="form-label"><i class="fas fa-envelope me-2 text-pink"></i>Email</label>
+                        <input type="email" class="form-control coquette-input" name="email" required>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label class="form-label"><i class="fas fa-calendar-days me-2 text-pink"></i>Date of Birth</label>
+                        <input type="date" class="form-control coquette-input" name="dob" required>
+                    </div>
+                    
+                    <div class="form-group mb-4">
+                        <label class="form-label"><i class="fas fa-key me-2 text-pink"></i>Access Permissions</label>
+                        <div class="permissions-grid">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="permissions" value="manage_users" id="permUsers">
+                                <label class="form-check-label" for="permUsers">Manage Users</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="permissions" value="manage_datasets" id="permData">
+                                <label class="form-check-label" for="permData">Manage Datasets</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="permissions" value="review_suggestions" id="permSuggest">
+                                <label class="form-check-label" for="permSuggest">Review Suggestions</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="permissions" value="manage_admins" id="permAdmins">
+                                <label class="form-check-label" for="permAdmins">Manage Other Admins</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-pink" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-pink">Create Admin</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Table Row Styling */
+#usersTable tbody tr {
+    border-bottom: 1px solid #ffe6eb; /* Add a bottom border to each row */
+}
+
+#usersTable tbody tr:last-child {
+    border-bottom: none; /* Remove the border from the last row */
+}
+
+#usersTable tbody td {
+    padding: 12px 15px; /* Add padding to cells */
+    vertical-align: middle; /* Center content vertically */
+}
+
+/* Status Badge Styling */
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* User Cell */
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Avatar Placeholder */
+.avatar-placeholder {
+    width: auto;
+    height: auto;
+    border-radius: auto;
+    background: linear-gradient(to right, #d35d6e, #e88d9a);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 2px solid #f8c3cd;
+}
+
+/* User Avatar */
+.user-avatar {
+    width: auto;
+    height: auto;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #f8c3cd;
+}
+
+    /* Add Admin Button Styles */
+    .add-admin-container {
+        display: inline-block;
+        position: relative;
+    }
+    
+    .btn-add-admin {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #d35d6e, #e88d9a);
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 8px rgba(211, 93, 110, 0.2);
+        position: relative;
+        z-index: 1;
+    }
+    
+    .btn-add-admin:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 12px rgba(211, 93, 110, 0.3);
+    }
+    
+    .btn-add-admin i {
+        font-size: 18px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-add-admin:hover i {
+        transform: rotate(90deg);
+    }
+    
+    .add-admin-tooltip {
+        position: absolute;
+        top: 50%;
+        right: 100%;
+        transform: translateY(-50%);
+        background: linear-gradient(135deg, #d35d6e, #e88d9a);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        margin-left: 10px;
+        box-shadow: 0 4px 8px rgba(211, 93, 110, 0.2);
+        z-index: 0;
+    }
+    
+    .btn-add-admin:hover .add-admin-tooltip {
+        opacity: 1;
+        visibility: visible;
+        margin-left: 15px;
+    }
+    
+    /* Animation for the plus sign */
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
+    .btn-add-admin i {
+        animation: pulse 2s infinite;
+    }
+    
+    .btn-add-admin:hover i {
+        animation: none;
+    }
+    /* Coquette Theme Extensions */
+    .coquette-theme {
+        background-color: #fff9fa;
+    }
+    
+    /* Table Styling */
+    #usersTable {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    #usersTable thead th {
+        border: none;
+        font-weight: 500;
+        padding: 15px;
+    }
+    
+    #usersTable tbody td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #ffe6eb;
+        vertical-align: middle;
+    }
+    
+    #usersTable tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    #usersTable tbody tr:hover {
+        background-color: #fff0f5 !important;
+    }
+    
+    /* User Cell */
+    .user-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #f8c3cd;
+    }
+    
+    .avatar-placeholder {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(to right, #d35d6e, #e88d9a);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        border: 2px solid #f8c3cd;
+    }
+    
+    /* Status Badges */
+    .status-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+    
+    .status-badge.pending {
+        background-color: #fff3e0;
+        color: #ff8f00;
+    }
+    
+    .status-badge.approved {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+    }
+    
+    .status-badge.rejected {
+        background-color: #ffebee;
+        color: #c62828;
+    }
+    
+    .status-badge.active {
+        background-color: #e3f2fd;
+        color: #1565c0;
+    }
+    
+    .status-badge.archived {
+        background-color: #f5f5f5;
+        color: #616161;
+    }
+    
+    .rejection-details, .approve-details {
+        margin-top: 4px;
+        line-height: 1.3;
+    }
+    
+    .rejection-details small, .approve-details small {
+        opacity: 0.9;
+        font-size: 0.85em;
+        color: inherit;
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .btn-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        color: white;
+        transition: all 0.3s;
+    }
+    
+    .btn-icon:hover {
+        transform: scale(1.1);
+    }
+    
+    .view-btn { 
+        background-color: #a5d6a7;
+    }
+    
+    .edit-btn { 
+        background-color: #ffcc80;
+    }
+    
+    .archive-btn { 
+        background-color: #ef9a9a;
+    }
+    
+    .restore-btn { 
+        background-color: #90caf9;
+    }
+    
+    /* Modal Styling */
+    .modal-content {
+        border-radius: 15px;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 5px 20px rgba(211, 93, 110, 0.2);
+    }
+    
+    .profile-image {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin: 0 auto 15px;
+        border: 3px solid #f8c3cd;
+    }
+    
+    .profile-placeholder {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: linear-gradient(to right, #d35d6e, #e88d9a);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        font-weight: bold;
+        margin: 0 auto 15px;
+        border: 3px solid #f8c3cd;
+    }
+    
+    .user-details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+    
+    .detail-item {
+        margin-bottom: 10px;
+    }
+    
+    .detail-item label {
+        display: block;
+        font-size: 13px;
+        color: #d35d6e;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+    
+    .detail-item p {
+        margin: 0;
+        font-size: 14px;
+        color: #555;
+    }
+    
+    .detail-item.full-width {
+        grid-column: 1 / -1;
+    }
+    
+    /* Permissions Grid */
+    .permissions-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 10px;
+        background-color: #fff9fa;
+        border-radius: 10px;
+        border: 1px solid #ffe6eb;
+    }
+    
+    .form-check-input:checked {
+        background-color: #d35d6e;
+        border-color: #d35d6e;
+    }
+    
+    /* Filter Buttons */
+    .filter-container {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-btn {
+        padding: 6px 12px;
+        border-radius: 20px;
+        background: white;
+        border: 1px solid #f8c3cd;
+        color: #d35d6e;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 13px;
+    }
+    
+    .filter-btn:hover, .filter-btn.active {
+        background: linear-gradient(to right, #d35d6e, #e88d9a);
+        color: white;
+        border-color: #d35d6e;
+    }
+    
+    /* Search Container */
+    .search-container {
+        position: relative;
+    }
+    
+    .search-container i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #d35d6e;
+    }
+    
+    .search-container input {
+        width: 100%;
+        padding: 10px 15px 10px 40px;
+        border: 1px solid #f8c3cd;
+        border-radius: 20px;
+        background: white;
+        transition: all 0.3s;
+    }
+    
+    .search-container input:focus {
+        border-color: #d35d6e;
+        box-shadow: 0 0 0 3px rgba(211, 93, 110, 0.1);
+        outline: none;
+    }
+    
+    /* Dropdown */
+    .dropdown-menu {
+        border-radius: 10px;
+        border: 1px solid #f8c3cd;
+        box-shadow: 0 5px 15px rgba(211, 93, 110, 0.1);
+    }
+    
+    .dropdown-item {
+        padding: 8px 15px;
+        color: #d35d6e;
+    }
+    
+    .dropdown-item:hover {
+        background-color: #fff0f5;
+    }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('keyup', function() {
+        const searchText = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#usersTable tbody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchText) ? '' : 'none';
+        });
+    });
+    
+    // Filter functionality
+    // Filter functionality - Modified to handle rejected users
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Update active state
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            const filter = this.getAttribute('data-filter');
+            const rows = document.querySelectorAll('#usersTable tbody tr');
+            
+            rows.forEach(row => {
+                if (filter === 'all') {
+                    // Hide rejected users in "All" view
+                    const isRejected = row.getAttribute('data-type') === 'rejected';
+                    row.style.display = isRejected ? 'none' : '';
+                } else if (filter === 'archived') {
+                    row.style.display = row.classList.contains('archived') ? '' : 'none';
+                } else {
+                    const rowType = row.getAttribute('data-type');
+                    // Only show rejected users when "Rejected" filter is selected
+                    if (filter === 'rejected') {
+                        row.style.display = rowType === 'rejected' ? '' : 'none';
+                    } else {
+                        row.style.display = rowType === filter ? '' : 'none';
+                    }
+                }
+            });
+        });
+    });
+    
+    // Sort functionality
+    const sortOptions = document.querySelectorAll('[data-sort]');
+    sortOptions.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            const sortBy = this.getAttribute('data-sort');
+            sortTable(sortBy);
+        });
+    });
+    
+    function sortTable(sortBy) {
+        const tbody = document.querySelector('#usersTable tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        rows.sort((a, b) => {
+            const dateA = new Date(a.getAttribute('data-created'));
+            const dateB = new Date(b.getAttribute('data-created'));
+            
+            return sortBy === 'newest' ? dateB - dateA : dateA - dateB;
+        });
+        
+        // Clear and re-append sorted rows
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+    }
+    
+    // Initialize with newest first
+    sortTable('newest');
+    
+    // Export CSV
+    document.getElementById('exportCSV').addEventListener('click', function() {
+        const filters = {
+            skin_tone: $('#skinToneFilter').val(),
+            face_shape: $('#faceShapeFilter').val(),
+            makeup_type: $('#makeupTypeFilter').val(),
+            makeup_look: $('#makeupLookFilter').val(),
+            shade: $('#shadeFilter').val(),
+            start_date: $('#startDate').val(),
+            end_date: $('#endDate').val()
+        };
+        
+        const queryParams = new URLSearchParams();
+        for (const key in filters) {
+            if (filters[key]) {
+                queryParams.append(key, filters[key]);
+            }
+        }
+        
+        window.location.href = '/admin/export_users?' + queryParams.toString();
+    });
+    
+    // Refresh data
+    document.getElementById('refreshData').addEventListener('click', function() {
+        Swal.fire({
+            title: 'Refreshing',
+            html: 'Loading latest user data',
+            timerProgressBar: true,
+            didOpen: () => {
+                Swal.showLoading()
+            },
+            background: '#fff9fa',
+            color: '#d35d6e'
+        });
+        setTimeout(() => {
+            location.reload();
+        }, 500);
+    });
+});
+
+function toggleVerdictField(selectElement) {
+    const verdictField = selectElement.closest('.modal-body').querySelector('.verdict-field');
+    if (selectElement.value === 'rejected' || selectElement.value === 'approved') {
+        verdictField.style.display = 'block';
+    } else {
+        verdictField.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

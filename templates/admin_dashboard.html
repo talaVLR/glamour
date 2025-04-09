@@ -1,0 +1,265 @@
+{% extends "admin_base.html" %}
+{% block content %}
+    <div class="dashboard-header">
+        <h1 class="dashboard-title"><i class="fas fa-crown"></i> Admin Dashboard</h1>
+        <div class="notification-bell">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge">3</span>
+        </div>
+    </div>
+
+    <!-- ==================== USER STATISTICS SECTION ==================== -->
+    <section class="dashboard-section">
+        <h2 class="section-title"><i class="fas fa-chart-pie"></i> User Statistics</h2>
+        <div class="stats-container">
+            <div class="stat-card">
+                <i class="fas fa-users stat-icon"></i>
+                <h3>Total Users</h3>
+                <p class="stat-value">{{ total_users }}</p>
+                <a href="/admin/manageusers" class="section-link">View all users <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-crown stat-icon"></i>
+                <h3>Admins</h3>
+                <p class="stat-value">{{ total_admins }}</p>
+                <a href="/admin/manageusers?role=admin" class="section-link">View admins <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-paint-brush stat-icon"></i>
+                <h3>Artists</h3>
+                <p class="stat-value">{{ total_artists }}</p>
+                <a href="/admin/manageusers?role=artist" class="section-link">View artists <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-heart stat-icon"></i>
+                <h3>Enthusiasts</h3>
+                <p class="stat-value">{{ total_enthusiasts }}</p>
+                <a href="/admin/manageusers?role=enthusiast" class="section-link">View enthusiasts <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== BEAUTY ATTRIBUTES SECTION ==================== -->
+    <section class="dashboard-section">
+        <h2 class="section-title"><i class="fas fa-chart-line"></i> Beauty Attributes</h2>
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3><i class="fas fa-face-smile" style="color: var(--accent-color); margin-right: 10px;"></i> Top Face Shapes</h3>
+                <ol class="attribute-list">
+                    {% for shape in top_face_shapes %}
+                        <li>
+                            <span class="attribute-name">{{ shape.face_shape_name }}</span>
+                            <span class="attribute-count">{{ shape.count }} users</span>
+                        </li>
+                    {% else %}
+                        <li>No data available</li>
+                    {% endfor %}
+                </ol>
+            </div>
+            
+            <div class="stat-card">
+                <h3><i class="fas fa-hand-sparkles" style="color: var(--accent-color); margin-right: 10px;"></i> Top Skin Tones</h3>
+                <ol class="attribute-list">
+                    {% for tone in top_skin_tones %}
+                        <li>
+                            <span class="attribute-name">{{ tone.skin_tone_name }}</span>
+                            <span class="attribute-count">{{ tone.count }} users</span>
+                        </li>
+                    {% else %}
+                        <li>No data available</li>
+                    {% endfor %}
+                </ol>
+            </div>
+
+            <div class="stat-card">
+                <h3><i class="fas fa-star" style="color: var(--accent-color); margin-right: 10px;"></i> Popular Preferences</h3>
+                <div class="preference-item">
+                    <span>Most Common Look:</span>
+                    <strong>{{ most_common_event }}</strong>
+                </div>
+                <div class="preference-item">
+                    <span>Top Recommended Shade:</span>
+                    <strong>{{ most_recommended_shade }}</strong>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== PENDING ACTIONS SECTION ==================== -->
+    <section class="dashboard-section">
+        <h2 class="section-title"><i class="fas fa-inbox"></i> Pending Actions</h2>
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3><i class="fas fa-lightbulb" style="color: var(--accent-color); margin-right: 10px;"></i> Pending Suggestions</h3>
+                <p class="stat-value">{{ total_pending_suggestions }}</p>
+                <a href="{{ url_for('suggestions') }}" class="btn-coquette" style="margin-top: 15px;">
+                    <i class="fas fa-eye"></i> Review Suggestions
+                </a>
+            </div>
+
+            <div class="stat-card full-width">
+                <h3><i class="fas fa-user-plus" style="color: var(--accent-color); margin-right: 10px;"></i> Pending Artist Applications</h3>
+                {% if pending_applicants %}
+                <div style="overflow-x: auto; margin-top: 15px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Certification</th>
+                                <th>Applied At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for applicant in pending_applicants %}
+                                <tr>
+                                    <td>{{ applicant.name }}</td>
+                                    <td>{{ applicant.email }}</td>
+                                    <td>{{ applicant.certification }}</td>
+                                    <td>{{ applicant.applied_at }}</td>
+                                    <td class="action-buttons">
+                                        <button class="btn-coquette approve-btn" onclick="approveApplicant({{ applicant.user_id }})">
+                                            <i class="fas fa-check"></i> Approve
+                                        </button>
+                                        <button class="btn-coquette reject-btn" onclick="rejectApplicant({{ applicant.user_id }})">
+                                            <i class="fas fa-times"></i> Reject
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle"></i>
+                        <p>No pending applications!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <style>
+        /* Section Styling */
+        .dashboard-section {
+            margin-bottom: 40px;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+        }
+        
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            color: var(--dark-color);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 12px;
+            color: var(--accent-color);
+        }
+        
+        .section-link {
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .section-link:hover {
+            color: var(--dark-color);
+            transform: translateX(3px);
+        }
+        
+        /* Attribute List Styling */
+        .attribute-list {
+            padding-left: 0;
+            list-style: none;
+            margin-top: 15px;
+        }
+        
+        .attribute-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed rgba(195, 141, 148, 0.2);
+        }
+        
+        .attribute-name {
+            color: var(--text-color);
+        }
+        
+        .attribute-count {
+            color: var(--accent-color);
+            font-weight: 500;
+        }
+        
+        /* Preference Items */
+        .preference-item {
+            margin: 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed rgba(195, 141, 148, 0.2);
+        }
+        
+        .preference-item span {
+            display: block;
+            font-size: 13px;
+            color: var(--accent-color);
+            margin-bottom: 3px;
+        }
+        
+        .preference-item strong {
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+        
+        /* Full Width Card */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: var(--accent-color);
+        }
+        
+        .empty-state i {
+            font-size: 40px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .empty-state p {
+            margin: 0;
+            font-size: 16px;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+
+    <script>
+        function approveApplicant(userId) {
+            fetch(`/admin/approve_applicant/${userId}`, { method: 'POST' })
+                .then(response => location.reload());
+        }
+
+        function rejectApplicant(userId) {
+            fetch(`/admin/reject_applicant/${userId}`, { method: 'POST' })
+                .then(response => location.reload());
+        }
+    </script>
+{% endblock %}
